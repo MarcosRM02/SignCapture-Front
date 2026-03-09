@@ -1,4 +1,5 @@
 import WebcamCapture from './components/WebcamCapture'
+import PredictionPanel from './components/PredictionPanel'
 
 function App() {
   return (
@@ -12,18 +13,16 @@ function App() {
       </header>
 
       {/* Main content area */}
-      <main className="flex flex-1 overflow-hidden">
+      <main className="flex flex-1 overflow-hidden p-4 gap-4">
 
         {/* Left column — 70% — Webcam */}
-        <section className="w-[70%] overflow-hidden m-4 rounded-lg">
+        <section className="w-[70%] overflow-hidden rounded-lg">
           <WebcamCapture />
         </section>
 
         {/* Right column — 30% — Prediction panel */}
-        <section className="w-[30%] flex items-center justify-center border-2 border-dashed border-gray-600 m-4 ml-0 rounded-lg">
-          <span className="text-gray-400 text-lg font-medium tracking-wide">
-            Panel de Predicción
-          </span>
+        <section className="w-[30%] h-full">
+          <PredictionPanel />
         </section>
 
       </main>
