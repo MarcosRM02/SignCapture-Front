@@ -1,16 +1,35 @@
-# React + Vite
+# SignCapture Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Cliente web en React + Vite para consumir una API FastAPI de deteccion de mano por frame.
 
-Currently, two official plugins are available:
+## Configuracion
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+1. Crea un `.env` a partir de `.env.example`.
+2. Ajusta la URL base del backend y los intervalos si lo necesitas.
 
-## React Compiler
+Variables disponibles:
 
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
+- `VITE_APP_TITLE`: titulo mostrado en la interfaz.
+- `VITE_API_BASE_URL`: URL base del backend FastAPI.
+- `VITE_DEFAULT_FRAME_INTERVAL_MS`: intervalo inicial de envio de frames.
+- `VITE_HEALTHCHECK_INTERVAL_MS`: frecuencia del health check.
+- `VITE_REQUEST_TIMEOUT_MS`: timeout de peticiones HTTP.
 
-## Expanding the ESLint configuration
+## Desarrollo
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+npm install
+npm run dev
+```
+
+## Build
+
+```bash
+npm run build
+npm run preview
+```
+
+## Notas
+
+- La URL e intervalo tambien se guardan en `localStorage`.
+- Si aparece un error CORS, habilita `CORSMiddleware` en FastAPI para el origen del frontend, por ejemplo `http://localhost:5173`.
