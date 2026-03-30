@@ -16,19 +16,13 @@ function WebcamCapture({
       {/* Overlay con información */}
       <div className={`absolute inset-x-0 top-0 z-10 p-2 sm:p-3 md:p-4 lg:p-6 bg-gradient-to-b ${isDarkMode ? 'from-slate-800/80 to-transparent' : 'from-white/80 to-transparent'}`}>
         <div className="flex items-start justify-between gap-2 sm:gap-3 md:gap-4">
-          <div className="flex-1 min-w-0">
-            <p className={`text-xs font-semibold uppercase tracking-widest mb-1 sm:mb-2 ${isDarkMode ? 'text-violet-400' : 'text-violet-600'}`}>
-              Captura en tiempo real
-            </p>
-            <p className={`text-xs sm:text-sm leading-relaxed line-clamp-2 font-medium ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
-              {statusMessage}
-            </p>
-          </div>
-          <div className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg backdrop-blur border-2 flex-shrink-0 ${isDarkMode ? 'bg-slate-700/40 border-slate-600' : 'bg-gradient-to-r from-violet-100 to-cyan-100 border-violet-300'}`}>
-            <span className={`h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full ${hasDetection ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
-            <span className={`text-xs font-semibold whitespace-nowrap ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
-              {hasDetection ? 'Detectado' : 'Esperando'}
-            </span>
+          <div className="flex-1 min-w-0 flex flex-col items-end gap-2 flex-shrink-0">
+            <div className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg backdrop-blur border-2 ${isDarkMode ? 'bg-slate-700/40 border-slate-600' : 'bg-gradient-to-r from-violet-100 to-cyan-100 border-violet-300'}`}>
+              <span className={`h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full ${hasDetection ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+              <span className={`text-xs font-semibold whitespace-nowrap ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                {hasDetection ? 'Detectado' : 'Esperando'}
+              </span>
+            </div>
           </div>
         </div>
       </div>

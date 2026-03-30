@@ -1,4 +1,10 @@
 import { X, Settings, CheckCircle, AlertCircle, Save, RotateCcw, Wifi, Eye, Zap } from 'lucide-react'
+import {
+  formatConfidence,
+  getDisplayLetter,
+  getPredictionSummary,
+  getTopCandidates,
+} from '../utils/inferencePresentation'
 
 function PredictionPanel({
   isOpen,
@@ -22,6 +28,7 @@ function PredictionPanel({
   backendHealthy,
   healthLoading,
   prediction,
+  feedback,
   metadata,
   error,
   lastSuccessAt,
@@ -29,10 +36,10 @@ function PredictionPanel({
   requestStats,
   isDarkMode,
 }) {
-  const confidence =
-    typeof prediction?.confidence === 'number'
-      ? `${(prediction.confidence * 100).toFixed(1)}%`
-      : '--'
+  const confidence = formatConfidence(prediction?.confidence)
+  const displayLetter = getDisplayLetter(prediction)
+  const predictionSummary = getPredictionSummary(prediction)
+  const topCandidates = getTopCandidates(prediction).slice(1)
 
   const saveDisabled =
     !apiBaseUrlDraft.trim() || Number(frameIntervalDraft) < 250 || healthLoading
@@ -42,6 +49,11 @@ function PredictionPanel({
     : backendHealthy
       ? 'Backend disponible'
       : 'Backend sin conexion'
+
+  const feedbackTone = getFeedbackTone(feedback?.level, isDarkMode)
+  const feedbackTips = feedback?.tips?.length
+    ? feedback.tips
+    : ['Activa la camara y empieza a signar para recibir indicaciones.']
 
   return (
     <>
@@ -117,7 +129,7 @@ function PredictionPanel({
               <div className={`rounded-lg border p-2.5 sm:p-3 ${isDarkMode ? 'bg-slate-600/30 border-slate-600' : 'bg-white/60 border-pink-200'}`}>
                 <p className={`text-xs mb-1 sm:mb-2 font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-700'}`}>Resultado</p>
                 <p className={`text-xs sm:text-sm font-bold break-words ${isDarkMode ? 'text-slate-200' : 'text-violet-600'}`}>
-                  {prediction?.label || 'Sin deteccion'}
+                  {predictionSummary}
                 </p>
               </div>
               <div className={`rounded-lg border p-2.5 sm:p-3 ${isDarkMode ? 'bg-slate-600/30 border-slate-600' : 'bg-white/60 border-pink-200'}`}>
@@ -129,6 +141,30 @@ function PredictionPanel({
                 <p className={`text-xs sm:text-sm font-semibold ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
                   {lastSuccessAt ? new Date(lastSuccessAt).toLocaleTimeString() : 'Sin datos'}
                 </p>
+              </div>
+            </div>
+            <div className={`mt-3 sm:mt-4 rounded-lg border p-3 sm:p-4 ${feedbackTone.container}`}>
+              <p className={`text-xs font-semibold uppercase tracking-widest mb-2 ${feedbackTone.eyebrow}`}>
+                Coaching
+              </p>
+              <p className={`text-sm sm:text-base font-bold mb-1 ${feedbackTone.title}`}>
+                {feedback?.title || 'Esperando una deteccion clara'}
+              </p>
+              <p className={`text-xs sm:text-sm leading-relaxed ${feedbackTone.message}`}>
+                {feedback?.message || 'Cuando la API reciba una postura reconocible, aqui veras consejos para corregirla.'}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span className={`rounded-full px-3 py-1 text-xs font-bold border ${isDarkMode ? 'border-slate-500 bg-slate-700/60 text-slate-100' : 'border-white/80 bg-white/70 text-slate-800'}`}>
+                  Letra: {displayLetter}
+                </span>
+                {topCandidates.map((candidate) => (
+                  <span
+                    key={candidate.label}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold border ${isDarkMode ? 'border-slate-500 bg-slate-800/70 text-slate-200' : 'border-white/80 bg-white/70 text-slate-700'}`}
+                  >
+                    {candidate.label} {formatConfidence(candidate.confidence)}
+                  </span>
+                ))}
               </div>
             </div>
           </section>
@@ -261,6 +297,22 @@ function PredictionPanel({
             </div>
           </section>
 
+          <section className={`rounded-lg sm:rounded-xl border-2 p-4 sm:p-6 shadow-md ${feedbackTone.container}`}>
+            <p className={`text-xs font-semibold uppercase tracking-widest mb-3 sm:mb-4 ${feedbackTone.eyebrow}`}>
+              Recomendaciones
+            </p>
+            <div className="space-y-2">
+              {feedbackTips.map((tip) => (
+                <div
+                  key={tip}
+                  className={`rounded-lg border px-3 py-2 text-xs sm:text-sm ${isDarkMode ? 'border-slate-600 bg-slate-800/40 text-slate-200' : 'border-white/80 bg-white/65 text-slate-800'}`}
+                >
+                  {tip}
+                </div>
+              ))}
+            </div>
+          </section>
+
           {/* Error Display */}
           {error && (
             <section className={`rounded-lg sm:rounded-xl border-2 p-3 sm:p-4 shadow-md ${isDarkMode ? 'bg-slate-700/40 border-slate-600' : 'bg-gradient-to-br from-rose-100 to-pink-100 border-rose-300'}`}>
@@ -274,6 +326,45 @@ function PredictionPanel({
       </aside>
     </>
   )
+}
+
+function getFeedbackTone(level, isDarkMode) {
+  const tones = {
+    success: {
+      container: isDarkMode
+        ? 'bg-emerald-900/20 border-emerald-700'
+        : 'bg-gradient-to-br from-emerald-100 to-teal-100 border-emerald-300',
+      eyebrow: isDarkMode ? 'text-emerald-300' : 'text-emerald-900',
+      title: isDarkMode ? 'text-emerald-100' : 'text-emerald-950',
+      message: isDarkMode ? 'text-emerald-50/90' : 'text-emerald-900',
+    },
+    info: {
+      container: isDarkMode
+        ? 'bg-cyan-900/20 border-cyan-700'
+        : 'bg-gradient-to-br from-cyan-100 to-blue-100 border-cyan-300',
+      eyebrow: isDarkMode ? 'text-cyan-300' : 'text-cyan-900',
+      title: isDarkMode ? 'text-cyan-100' : 'text-cyan-950',
+      message: isDarkMode ? 'text-cyan-50/90' : 'text-cyan-900',
+    },
+    warning: {
+      container: isDarkMode
+        ? 'bg-amber-900/20 border-amber-700'
+        : 'bg-gradient-to-br from-amber-100 to-orange-100 border-amber-300',
+      eyebrow: isDarkMode ? 'text-amber-300' : 'text-amber-900',
+      title: isDarkMode ? 'text-amber-100' : 'text-amber-950',
+      message: isDarkMode ? 'text-amber-50/90' : 'text-amber-900',
+    },
+    error: {
+      container: isDarkMode
+        ? 'bg-rose-900/20 border-rose-700'
+        : 'bg-gradient-to-br from-rose-100 to-pink-100 border-rose-300',
+      eyebrow: isDarkMode ? 'text-rose-300' : 'text-rose-900',
+      title: isDarkMode ? 'text-rose-100' : 'text-rose-950',
+      message: isDarkMode ? 'text-rose-50/90' : 'text-rose-900',
+    },
+  }
+
+  return tones[level] || tones.info
 }
 
 function QuickButton({ onClick, disabled, icon, label, color, isDarkMode }) {
