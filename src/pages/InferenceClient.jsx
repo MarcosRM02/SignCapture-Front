@@ -3,22 +3,18 @@ import {
   Play,
   Square,
   Settings,
-  Volume2,
-  Wifi,
-  WifiOff,
-  CheckCircle,
-  AlertCircle,
-  Eye,
-  Hand,
   Zap,
   Clock,
-  TrendingUp,
   Moon,
   Sun,
 } from 'lucide-react'
 import PredictionPanel from '../components/PredictionPanel'
 import WebcamCapture from '../components/WebcamCapture'
 import useWebcamInference from '../hooks/useWebcamInference'
+import {
+  formatConfidence,
+  getDisplayLetter,
+} from '../utils/inferencePresentation'
 
 function InferenceClient() {
   const [isControlCenterOpen, setIsControlCenterOpen] = useState(false)
@@ -41,8 +37,6 @@ function InferenceClient() {
     error,
     statusMessage,
     prediction,
-    metadata,
-    lastSuccessAt,
     requestStats,
     hasDetection,
     videoRef,
@@ -77,14 +71,8 @@ function InferenceClient() {
       ? 'Backend disponible'
       : 'Backend sin conexion'
 
-  const confidence =
-    typeof prediction?.confidence === 'number'
-      ? `${(prediction.confidence * 100).toFixed(1)}%`
-      : '--'
-
-  const lastInferenceTime = lastSuccessAt
-    ? new Date(lastSuccessAt).toLocaleTimeString()
-    : 'Sin inferencias'
+  const confidence = formatConfidence(prediction?.confidence)
+  const displayLetter = getDisplayLetter(prediction)
 
   return (
     <div className={`min-h-screen ${isDarkMode ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100' : 'bg-gradient-to-br from-purple-50 via-blue-50 to-cyan-50 text-slate-900'} flex flex-col`}>
@@ -93,14 +81,8 @@ function InferenceClient() {
         <div className="w-full px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-2 sm:gap-4">
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 mb-1 sm:mb-2">
-                <span className="h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-violet-500 animate-pulse flex-shrink-0" />
-                <span className={`text-xs font-semibold uppercase tracking-widest ${isDarkMode ? 'text-violet-400' : 'text-violet-600'} truncate`}>
-                  {appTitle}
-                </span>
-              </div>
               <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-cyan-600">
-                Sign Analysis
+                SignCapture
               </h1>
             </div>
             
@@ -132,9 +114,9 @@ function InferenceClient() {
       </header>
 
       <main className="flex-1 w-full px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 overflow-hidden">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 h-full">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(280px,0.9fr)] gap-4 sm:gap-6 h-full">
           {/* Cámara Principal */}
-          <div className="lg:col-span-2 flex flex-col gap-3 sm:gap-4 md:gap-6 overflow-hidden">
+          <div className="flex flex-col gap-3 sm:gap-4 md:gap-6 overflow-hidden">
             {/* Video Container - FIXED ASPECT RATIO 16:9 */}
             <div className={`rounded-lg sm:rounded-xl md:rounded-2xl overflow-hidden border-2 ${isDarkMode ? 'border-slate-600 bg-slate-800' : 'border-violet-300 bg-white'} shadow-xl aspect-video`}>
               <WebcamCapture
@@ -174,14 +156,23 @@ function InferenceClient() {
               </button>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 md:gap-4 flex-shrink-0">
-              <StatCard
-                icon={<TrendingUp size={16} className="sm:w-5 sm:h-5" />}
-                label="Predicción"
-                value={prediction?.label || 'Sin deteccion'}
-                isDarkMode={isDarkMode}
-              />
+          </div>
+
+          {/* Sidebar */}
+          <aside className="flex flex-col gap-3 sm:gap-4 h-full min-h-[220px]">
+            {/* Prediction Display - Large Letter Box */}
+            <div className={`flex-1 min-h-[220px] rounded-lg sm:rounded-xl border-3 flex items-center justify-center shadow-xl ${isDarkMode ? 'bg-gradient-to-br from-slate-700 to-slate-800 border-purple-500' : 'bg-gradient-to-br from-purple-100 to-indigo-100 border-purple-400'}`}>
+              <div className="text-center">
+                <p className={`text-xs sm:text-sm font-semibold mb-2 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                  Letra Detectada
+                </p>
+                <div className={`text-3xl sm:text-4xl md:text-5xl font-bold transition-all duration-300 ${isDarkMode ? 'text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400' : 'text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600'}`}>
+                  {displayLetter}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4">
               <StatCard
                 icon={<Zap size={16} className="sm:w-5 sm:h-5" />}
                 label="Confianza"
@@ -198,109 +189,6 @@ function InferenceClient() {
                 }
                 isDarkMode={isDarkMode}
               />
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <aside className="flex flex-col gap-3 sm:gap-4 md:gap-6 overflow-y-auto h-full">
-            {/* Status Overview */}
-            <div className={`rounded-lg sm:rounded-xl backdrop-blur p-4 sm:p-6 border-2 shadow-md ${isDarkMode ? 'bg-slate-700/40 border-slate-600' : 'bg-gradient-to-br from-blue-100 to-cyan-100 border-blue-300'}`}>
-              <h3 className={`text-xs sm:text-sm font-semibold uppercase tracking-wide mb-3 sm:mb-4 flex items-center gap-2 ${isDarkMode ? 'text-slate-300' : 'text-blue-900'}`}>
-                <Volume2 size={14} className="sm:w-4 sm:h-4" />
-                Estado del Sistema
-              </h3>
-              <div className="space-y-2 sm:space-y-3">
-                <StatusRow
-                  icon={isCameraActive ? <Eye size={14} className="sm:w-4 sm:h-4 text-emerald-600" /> : <Eye size={14} className="sm:w-4 sm:h-4 text-slate-400" />}
-                  label="Cámara"
-                  value={isCameraActive ? 'Activa' : 'Detenida'}
-                  isActive={isCameraActive}
-                  isDarkMode={isDarkMode}
-                />
-                <StatusRow
-                  icon={isStreaming ? <Wifi size={14} className="sm:w-4 sm:h-4 text-violet-600" /> : <WifiOff size={14} className="sm:w-4 sm:h-4 text-slate-400" />}
-                  label="Streaming"
-                  value={isStreaming ? 'En curso' : 'Detenido'}
-                  isActive={isStreaming}
-                  isDarkMode={isDarkMode}
-                />
-                <StatusRow
-                  icon={hasDetection ? <Hand size={14} className="sm:w-4 sm:h-4 text-orange-600" /> : <Hand size={14} className="sm:w-4 sm:h-4 text-slate-400" />}
-                  label="Detección"
-                  value={hasDetection ? 'Mano detectada' : 'Esperando'}
-                  isActive={hasDetection}
-                  isDarkMode={isDarkMode}
-                />
-                <StatusRow
-                  icon={backendHealthy ? <CheckCircle size={14} className="sm:w-4 sm:h-4 text-emerald-600" /> : <AlertCircle size={14} className="sm:w-4 sm:h-4 text-rose-600" />}
-                  label="Backend"
-                  value={backendHealthy ? 'Disponible' : 'Desconectado'}
-                  isActive={backendHealthy}
-                  isDarkMode={isDarkMode}
-                />
-              </div>
-            </div>
-
-            {/* Statistics */}
-            <div className={`rounded-lg sm:rounded-xl backdrop-blur p-4 sm:p-6 border-2 shadow-md ${isDarkMode ? 'bg-slate-700/40 border-slate-600' : 'bg-gradient-to-br from-pink-100 to-purple-100 border-pink-300'}`}>
-              <h3 className={`text-xs sm:text-sm font-semibold uppercase tracking-wide mb-3 sm:mb-4 flex items-center gap-2 ${isDarkMode ? 'text-slate-300' : 'text-purple-900'}`}>
-                <TrendingUp size={14} className="sm:w-4 sm:h-4" />
-                Estadísticas
-              </h3>
-              <div className="space-y-1.5 sm:space-y-2">
-                <StatRowSmall
-                  label="Solicitudes exitosas"
-                  value={requestStats.successCount}
-                  isDarkMode={isDarkMode}
-                />
-                <StatRowSmall
-                  label="Solicitudes fallidas"
-                  value={requestStats.failureCount}
-                  isDarkMode={isDarkMode}
-                />
-                <StatRowSmall
-                  label="Frames con mano"
-                  value={metadata?.hand_detected_frames ?? '--'}
-                  isDarkMode={isDarkMode}
-                />
-                <StatRowSmall
-                  label="Última inferencia"
-                  value={lastInferenceTime}
-                  isDarkMode={isDarkMode}
-                />
-              </div>
-            </div>
-
-            {/* Configuration */}
-            <div className={`rounded-lg sm:rounded-xl backdrop-blur p-4 sm:p-6 border-2 shadow-md ${isDarkMode ? 'bg-slate-700/40 border-slate-600' : 'bg-gradient-to-br from-amber-100 to-orange-100 border-amber-300'}`}>
-              <h3 className={`text-xs sm:text-sm font-semibold uppercase tracking-wide mb-3 sm:mb-4 flex items-center gap-2 ${isDarkMode ? 'text-slate-300' : 'text-amber-900'}`}>
-                <Settings size={14} className="sm:w-4 sm:h-4" />
-                Configuración
-              </h3>
-              <div className="space-y-2">
-                <ConfigRow
-                  label="API Base"
-                  value={savedApiBaseUrl}
-                  isDarkMode={isDarkMode}
-                />
-                <ConfigRow
-                  label="Intervalo"
-                  value={`${savedFrameIntervalMs} ms`}
-                  isDarkMode={isDarkMode}
-                />
-              </div>
-            </div>
-
-            {/* Prediction Display - Large Letter Box */}
-            <div className={`flex-1 rounded-lg sm:rounded-xl border-3 flex items-center justify-center shadow-xl ${isDarkMode ? 'bg-gradient-to-br from-slate-700 to-slate-800 border-purple-500' : 'bg-gradient-to-br from-purple-100 to-indigo-100 border-purple-400'}`}>
-              <div className="text-center">
-                <p className={`text-xs sm:text-sm font-semibold mb-2 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                  Letra Detectada
-                </p>
-                <div className={`text-3xl sm:text-4xl md:text-5xl font-bold transition-all duration-300 ${isDarkMode ? 'text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400' : 'text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600'}`}>
-                  {prediction?.label || 'A'}
-                </div>
-              </div>
             </div>
           </aside>
         </div>
@@ -329,9 +217,7 @@ function InferenceClient() {
         backendHealthy={backendHealthy}
         healthLoading={healthLoading}
         prediction={prediction}
-        metadata={metadata}
         error={error}
-        lastSuccessAt={lastSuccessAt}
         statusMessage={statusMessage}
         requestStats={requestStats}
         isDarkMode={isDarkMode}
@@ -349,38 +235,6 @@ function StatCard({ icon, label, value, isDarkMode }) {
         <span className="text-xs font-semibold uppercase tracking-wide">{label}</span>
       </div>
       <p className={`text-lg sm:text-xl md:text-2xl font-bold break-words ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`}>{value}</p>
-    </div>
-  )
-}
-
-function StatusRow({ icon, label, value, isActive, isDarkMode }) {
-  return (
-    <div className={`flex items-center justify-between gap-2 p-2 sm:p-2.5 rounded-lg transition-colors border ${isDarkMode ? 'bg-slate-600/30 border-slate-600 hover:bg-slate-600/50' : 'bg-white/50 border-blue-200 hover:bg-white/70'}`}>
-      <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
-        {icon}
-        <span className={`text-xs sm:text-sm truncate font-medium ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>{label}</span>
-      </div>
-      <span className={`text-xs sm:text-sm font-semibold flex-shrink-0 ${isActive ? 'text-emerald-600' : isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-        {value}
-      </span>
-    </div>
-  )
-}
-
-function StatRowSmall({ label, value, isDarkMode }) {
-  return (
-    <div className={`flex justify-between items-center text-xs sm:text-sm gap-2 p-2 rounded-lg ${isDarkMode ? 'bg-slate-600/30' : 'bg-white/50'}`}>
-      <span className={`font-medium ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>{label}</span>
-      <span className={`font-bold flex-shrink-0 ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`}>{value}</span>
-    </div>
-  )
-}
-
-function ConfigRow({ label, value, isDarkMode }) {
-  return (
-    <div className={`text-xs sm:text-sm p-2 rounded-lg ${isDarkMode ? 'bg-slate-600/30' : 'bg-white/50'}`}>
-      <span className={`font-medium ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>{label}:</span>
-      <p className={`font-mono text-xs break-all mt-1 font-semibold ${isDarkMode ? 'text-slate-300' : 'text-amber-700'}`}>{value}</p>
     </div>
   )
 }
