@@ -16,6 +16,8 @@ import {
   getDisplayLetter,
 } from '../utils/inferencePresentation'
 
+const alphabetGuideSrc = `${import.meta.env.BASE_URL}ASL_Alphabet.png`
+
 function InferenceClient() {
   const [isControlCenterOpen, setIsControlCenterOpen] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(false)
@@ -160,9 +162,22 @@ function InferenceClient() {
 
           {/* Sidebar */}
           <aside className="flex flex-col gap-3 sm:gap-4 h-full min-h-[220px]">
+            <div className={`rounded-lg sm:rounded-xl border-2 shadow-lg ${isDarkMode ? 'border-slate-600 bg-slate-800/80' : 'border-cyan-200 bg-white/85'}`}>
+              <div className="px-3 py-4 sm:px-4 sm:py-5 md:px-5 md:py-6">
+                <p className={`text-xs sm:text-sm font-semibold mb-3 text-center ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                  Alfabeto ASL
+                </p>
+                <img
+                  src={alphabetGuideSrc}
+                  alt="Guia visual del alfabeto ASL"
+                  className="mx-auto h-52 w-full max-w-none object-contain sm:h-60 md:h-[18rem] lg:h-[22rem]"
+                />
+              </div>
+            </div>
+
             {/* Prediction Display - Large Letter Box */}
-            <div className={`flex-1 min-h-[220px] rounded-lg sm:rounded-xl border-3 flex items-center justify-center shadow-xl ${isDarkMode ? 'bg-gradient-to-br from-slate-700 to-slate-800 border-purple-500' : 'bg-gradient-to-br from-purple-100 to-indigo-100 border-purple-400'}`}>
-              <div className="text-center">
+            <div className={`flex-1 min-h-[260px] sm:min-h-[280px] md:min-h-[343px] rounded-lg sm:rounded-xl border-3 flex items-center justify-center shadow-xl ${isDarkMode ? 'bg-gradient-to-br from-slate-700 to-slate-800 border-purple-500' : 'bg-gradient-to-br from-purple-100 to-indigo-100 border-purple-400'}`}>
+              <div className="w-full text-center px-4 py-5 sm:px-5 sm:py-6">
                 <p className={`text-xs sm:text-sm font-semibold mb-2 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                   Letra Detectada
                 </p>
