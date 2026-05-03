@@ -1,16 +1,22 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
-  Play,
-  Square,
-  Settings,
-  Zap,
-  Clock,
+  Clock3,
+  Expand,
+  Hand,
+  Search,
   Moon,
-  Sun,
+  PanelsTopLeft,
+  Radio,
+  Server,
+  Square,
+  SunMedium,
+  X,
+  Zap,
 } from 'lucide-react'
 import PredictionPanel from '../components/PredictionPanel'
 import WebcamCapture from '../components/WebcamCapture'
 import useWebcamInference from '../hooks/useWebcamInference'
+import aslReferenceSrc from '../assets/ASL_Alphabet.png'
 import {
   formatConfidence,
   getDisplayLetter,
@@ -19,6 +25,7 @@ import {
 function InferenceClient() {
   const [isControlCenterOpen, setIsControlCenterOpen] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(false)
+  const [isGuideOpen, setIsGuideOpen] = useState(false)
 
   const {
     appTitle,
@@ -37,6 +44,9 @@ function InferenceClient() {
     error,
     statusMessage,
     prediction,
+    feedback,
+    metadata,
+    lastSuccessAt,
     requestStats,
     hasDetection,
     videoRef,
@@ -48,153 +58,270 @@ function InferenceClient() {
     checkHealth,
   } = useWebcamInference()
 
-  // Funciones combinadas para start/stop
+  useEffect(() => {
+    document.documentElement.dataset.theme = isDarkMode ? 'dark' : 'light'
+  }, [isDarkMode])
+
+  useEffect(() => {
+    if (!isGuideOpen) {
+      return undefined
+    }
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setIsGuideOpen(false)
+      }
+    }
+
+    window.addEventListener('keydown', handleEscape)
+    return () => window.removeEventListener('keydown', handleEscape)
+  }, [isGuideOpen])
+
   const handleToggleRecording = async () => {
     if (isCameraActive && isStreaming) {
       stopCamera()
       stopStreaming()
-    } else {
-      // Primero inicia la cámara y espera a que esté lista
-      const cameraSuccess = await startCamera()
-      // Solo si la cámara se inició exitosamente, comienza el envío de frames
-      if (cameraSuccess) {
-        startStreaming()
-      }
+      return
+    }
+
+    const cameraSuccess = await startCamera()
+    if (cameraSuccess) {
+      startStreaming()
     }
   }
 
   const isRecording = isCameraActive && isStreaming
-
   const connectionLabel = healthLoading
     ? 'Comprobando backend'
     : backendHealthy
       ? 'Backend disponible'
       : 'Backend sin conexion'
 
-  const confidence = formatConfidence(prediction?.confidence)
+  const cameraStateLabel = isCameraActive ? 'Activa' : 'Inactiva'
+  const streamingStateLabel = isStreaming ? 'Activo' : 'Inactivo'
+  const detectionStateLabel = hasDetection ? 'Mano detectada' : 'Sin mano'
   const displayLetter = getDisplayLetter(prediction)
+  const confidence = formatConfidence(prediction?.confidence)
+  const confidenceValue = typeof prediction?.confidence === 'number'
+    ? prediction.confidence * 100
+    : null
+
+  const contextualMessage = useMemo(() => {
+    if (!hasDetection) {
+      return 'Coloca la mano dentro del encuadre.'
+    }
+
+    if (typeof confidenceValue !== 'number') {
+      return 'Resultado actual de la inferencia.'
+    }
+
+    if (confidenceValue >= 90) {
+      return `La configuracion de la mano coincide con bastante seguridad con la letra ${displayLetter}.`
+    }
+
+    if (confidenceValue >= 70) {
+      return 'La prediccion es probable, pero todavia hay cierta ambiguedad.'
+    }
+
+    return 'Prediccion poco estable. Intenta centrar mejor la mano.'
+  }, [confidenceValue, displayLetter, hasDetection])
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100' : 'bg-gradient-to-br from-purple-50 via-blue-50 to-cyan-50 text-slate-900'} flex flex-col`}>
-      {/* Header */}
-      <header className={`border-b ${isDarkMode ? 'border-slate-700 bg-slate-800/85' : 'border-purple-200 bg-white/85'} backdrop-blur-xl sticky top-0 z-20 shadow-sm`}>
-        <div className="w-full px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
-          <div className="flex items-center justify-between gap-2 sm:gap-4">
-            <div className="min-w-0 flex-1">
-              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-cyan-600">
-                SignCapture
-              </h1>
-            </div>
-            
-            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-              <div className={`hidden sm:flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl ${isDarkMode ? 'bg-slate-700 border-slate-600' : 'bg-gradient-to-r from-violet-100 to-cyan-100 border-violet-200'} border text-xs sm:text-sm`}>
-                <div className={`h-2 w-2 rounded-full flex-shrink-0 ${backendHealthy ? 'bg-emerald-500' : 'bg-rose-500'} ${healthLoading ? 'animate-pulse' : ''}`} />
-                <span className={`font-medium truncate ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
-                  {connectionLabel}
-                </span>
+    <div className="app-shell h-screen overflow-hidden">
+      <div className="page-shell reference-shell mx-auto flex h-screen w-full max-w-[1540px] flex-col px-4 py-2.5 sm:px-5 sm:py-3 lg:px-6">
+        <header className="surface-panel reference-header">
+          <div className="header-grid">
+            <div className="flex min-w-0 items-start gap-4">
+              <div className="brand-mark flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl">
+                <Hand size={24} />
               </div>
-              
-              <button
-                onClick={() => setIsDarkMode(!isDarkMode)}
-                className={`p-2 sm:p-2.5 rounded-lg transition-colors border ${isDarkMode ? 'hover:bg-slate-700 border-slate-600 text-slate-300 hover:text-slate-100' : 'hover:bg-violet-100 border-violet-200 hover:border-violet-300 text-slate-700'} flex-shrink-0`}
-                title={isDarkMode ? 'Modo claro' : 'Modo oscuro'}
-              >
-                {isDarkMode ? <Sun size={18} className="sm:w-5 sm:h-5" /> : <Moon size={18} className="sm:w-5 sm:h-5" />}
-              </button>
-              
-              <button
-                onClick={() => setIsControlCenterOpen(true)}
-                className={`p-2 sm:p-2.5 rounded-lg transition-colors border ${isDarkMode ? 'hover:bg-slate-700 border-slate-600 text-slate-300 hover:text-slate-100' : 'hover:bg-violet-100 border-violet-200 hover:border-violet-300 text-slate-700'} flex-shrink-0`}
-              >
-                <Settings size={18} className="sm:w-5 sm:h-5" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="flex-1 w-full px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 overflow-hidden">
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(280px,0.9fr)] gap-4 sm:gap-6 h-full">
-          {/* Cámara Principal */}
-          <div className="flex flex-col gap-3 sm:gap-4 md:gap-6 overflow-hidden">
-            {/* Video Container - FIXED ASPECT RATIO 16:9 */}
-            <div className={`rounded-lg sm:rounded-xl md:rounded-2xl overflow-hidden border-2 ${isDarkMode ? 'border-slate-600 bg-slate-800' : 'border-violet-300 bg-white'} shadow-xl aspect-video`}>
-              <WebcamCapture
-                videoRef={videoRef}
-                overlayCanvasRef={overlayCanvasRef}
-                statusMessage={statusMessage}
-                error={error}
-                isCameraActive={isCameraActive}
-                isStreaming={isStreaming}
-                hasDetection={hasDetection}
-                isDarkMode={isDarkMode}
-              />
-            </div>
-
-            {/* Unified Capture Button */}
-            <div className="flex justify-center flex-shrink-0">
-              <button
-                onClick={handleToggleRecording}
-                disabled={!backendHealthy || healthLoading}
-                className={`flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl font-bold text-sm sm:text-base md:text-lg transition-all duration-300 shadow-lg whitespace-nowrap ${
-                  isRecording
-                    ? 'bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white shadow-pink-300/50'
-                    : 'bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white shadow-cyan-300/50'
-                } disabled:opacity-50 disabled:cursor-not-allowed`}
-              >
-                {isRecording ? (
-                  <>
-                    <Square size={20} className="fill-current flex-shrink-0 sm:w-6 sm:h-6" />
-                    <span>Detener Captura</span>
-                  </>
-                ) : (
-                  <>
-                    <Play size={20} className="fill-current flex-shrink-0 sm:w-6 sm:h-6" />
-                    <span>Iniciar Captura</span>
-                  </>
-                )}
-              </button>
-            </div>
-
-          </div>
-
-          {/* Sidebar */}
-          <aside className="flex flex-col gap-3 sm:gap-4 h-full min-h-[220px]">
-            {/* Prediction Display - Large Letter Box */}
-            <div className={`flex-1 min-h-[220px] rounded-lg sm:rounded-xl border-3 flex items-center justify-center shadow-xl ${isDarkMode ? 'bg-gradient-to-br from-slate-700 to-slate-800 border-purple-500' : 'bg-gradient-to-br from-purple-100 to-indigo-100 border-purple-400'}`}>
-              <div className="text-center">
-                <p className={`text-xs sm:text-sm font-semibold mb-2 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                  Letra Detectada
+              <div className="min-w-0">
+                <p className="section-kicker mb-1">Reconocimiento ASL en tiempo real</p>
+                <h1 className="reference-title">SignCapture</h1>
+                <p className="reference-subtitle">
+                  Monitoriza la cámara, la predicción actual y el estado del sistema en una interfaz limpia y compacta.
                 </p>
-                <div className={`text-3xl sm:text-4xl md:text-5xl font-bold transition-all duration-300 ${isDarkMode ? 'text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400' : 'text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600'}`}>
-                  {displayLetter}
-                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4">
-              <StatCard
-                icon={<Zap size={16} className="sm:w-5 sm:h-5" />}
-                label="Confianza"
-                value={confidence}
-                isDarkMode={isDarkMode}
+            <div className="header-actions header-actions-reference">
+              <StatusPill
+                icon={<Server size={15} />}
+                label={connectionLabel}
+                tone={backendHealthy ? 'positive' : 'neutral'}
+                pulsing={healthLoading}
               />
-              <StatCard
-                icon={<Clock size={16} className="sm:w-5 sm:h-5" />}
-                label="Latencia"
-                value={
-                  requestStats.lastRequestDurationMs > 0
-                    ? `${requestStats.lastRequestDurationMs} ms`
-                    : '--'
-                }
-                isDarkMode={isDarkMode}
-              />
+              <button
+                type="button"
+                onClick={() => setIsDarkMode((current) => !current)}
+                className="toolbar-button"
+                title={isDarkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+              >
+                {isDarkMode ? <SunMedium size={18} /> : <Moon size={18} />}
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsControlCenterOpen(true)}
+                className="toolbar-button toolbar-button-accent"
+              >
+                <PanelsTopLeft size={18} />
+                <span>Panel tecnico</span>
+              </button>
             </div>
-          </aside>
-        </div>
-      </main>
+          </div>
+        </header>
 
-      {/* Control Center Panel */}
+        <main className="flex-1 min-h-0">
+          <div className="dashboard-grid dashboard-grid-reference h-full">
+            <section className="left-column min-h-0 space-y-4">
+              <article className="surface-panel camera-shell-card">
+                <div className="camera-shell-header">
+                  <div className="min-w-0">
+                    <p className="section-kicker">Vista en directo</p>
+                    <p className="section-copy mt-1">
+                      {backendHealthy
+                        ? 'Recibiendo inferencias del backend.'
+                        : 'Esperando conexion estable con el backend.'}
+                    </p>
+                  </div>
+                  <div className="camera-shell-actions">
+                    <StatusPill
+                      icon={<Radio size={14} />}
+                      label={hasDetection ? 'Mano detectada' : 'Esperando mano'}
+                      tone={hasDetection ? 'positive' : 'neutral'}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleToggleRecording}
+                      disabled={!backendHealthy || healthLoading}
+                      className={`session-button ${isRecording ? 'session-button-stop' : 'session-button-start'}`}
+                    >
+                      <Square size={16} className={isRecording ? 'fill-current' : ''} />
+                      <span>{isRecording ? 'Detener captura' : 'Iniciar captura'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="camera-stage camera-stage-reference">
+                  <div className="overflow-hidden rounded-[20px]">
+                    <WebcamCapture
+                      videoRef={videoRef}
+                      overlayCanvasRef={overlayCanvasRef}
+                      error={error}
+                      isCameraActive={isCameraActive}
+                      isStreaming={isStreaming}
+                      hasDetection={hasDetection}
+                      isDarkMode={isDarkMode}
+                    />
+                  </div>
+                </div>
+
+                <div className="camera-help-text">
+                  <span className="camera-help-label">Ayuda contextual:</span>
+                  <span>{contextualMessage}</span>
+                </div>
+
+              </article>
+
+            </section>
+
+            <section className="middle-column min-h-0 space-y-4">
+              <article className="surface-panel info-panel info-panel-tight">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="section-kicker">Letra detectada</p>
+                    <p className="section-copy mt-1">Resultado principal de la inferencia actual.</p>
+                  </div>
+                  <span className="text-sm font-semibold text-[var(--accent-brand)]">
+                    {hasDetection ? 'Activo' : 'En espera'}
+                  </span>
+                </div>
+
+                <div className="prediction-letter-wrap">
+                  <div className="prediction-letter prediction-letter-reference mt-3">
+                    {displayLetter}
+                  </div>
+                </div>
+
+              </article>
+
+              <article className="surface-panel info-panel info-panel-tight">
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div>
+                    <p className="section-kicker">Referencia ASL</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsGuideOpen(true)}
+                    className="guide-expand-button"
+                    aria-label="Ampliar guia ASL"
+                  >
+                    <Search size={14} />
+                  </button>
+                </div>
+                <div className="asl-reference-frame asl-reference-frame-side">
+                  <img
+                    src={aslReferenceSrc}
+                    alt="Guia visual del alfabeto dactilologico ASL"
+                    className="asl-reference-image"
+                  />
+                </div>
+              </article>
+            </section>
+
+            <aside className="right-column right-column-reference min-h-0 space-y-4">
+              <article className="surface-panel info-panel info-panel-tight">
+                <div className="mb-4">
+                  <p className="section-kicker">Estados del sistema</p>
+                  <p className="section-copy mt-1">Resumen esencial de la sesion.</p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <BasicStatusRow label="Cámara" value={cameraStateLabel} active={isCameraActive} />
+                  <BasicStatusRow label="Streaming" value={streamingStateLabel} active={isStreaming} />
+                  <BasicStatusRow
+                    label="Detección"
+                    value={detectionStateLabel}
+                    active={hasDetection}
+                    className="sm:col-span-2"
+                  />
+                </div>
+              </article>
+
+              <article className="surface-panel info-panel info-panel-tight">
+                <div className="mb-4">
+                  <p className="section-kicker">Resumen técnico</p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <MetricCard icon={<Zap size={16} />} label="Confianza" value={confidence} compact />
+                  <MetricCard
+                    icon={<Clock3 size={16} />}
+                    label="Latencia"
+                    value={
+                      requestStats.lastRequestDurationMs > 0
+                        ? `${requestStats.lastRequestDurationMs} ms`
+                        : '--'
+                    }
+                    compact
+                  />
+                  <MetricCard label="Solicitudes OK" value={requestStats.successCount} compact />
+                  <MetricCard label="Solicitudes KO" value={requestStats.failureCount} compact />
+                  <MetricCard
+                    label="Última respuesta"
+                    value={lastSuccessAt ? new Date(lastSuccessAt).toLocaleTimeString() : '--'}
+                    compact
+                  />
+                  <MetricCard
+                    label="Frames con mano"
+                    value={metadata?.hand_detected_frames ?? '--'}
+                    compact
+                  />
+                </div>
+              </article>
+            </aside>
+          </div>
+        </main>
+      </div>
+
       <PredictionPanel
         isOpen={isControlCenterOpen}
         onClose={() => setIsControlCenterOpen(false)}
@@ -217,24 +344,95 @@ function InferenceClient() {
         backendHealthy={backendHealthy}
         healthLoading={healthLoading}
         prediction={prediction}
+        feedback={feedback}
+        metadata={metadata}
+        lastSuccessAt={lastSuccessAt}
         error={error}
         statusMessage={statusMessage}
         requestStats={requestStats}
         isDarkMode={isDarkMode}
       />
+
+      {isGuideOpen && (
+        <div
+          className="guide-modal-backdrop"
+          role="presentation"
+          onClick={() => setIsGuideOpen(false)}
+        >
+          <div
+            className="guide-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="asl-guide-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="guide-modal-header">
+              <div>
+                <p className="section-kicker">Referencia ASL</p>
+                <h2 id="asl-guide-title" className="section-title">Guia visual ampliada del alfabeto dactilologico</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsGuideOpen(false)}
+                className="toolbar-button"
+                aria-label="Cerrar guia ampliada"
+              >
+                <X size={16} />
+                <span>Cerrar</span>
+              </button>
+            </div>
+            <div className="guide-modal-body">
+              <div className="asl-reference-frame asl-reference-frame-modal">
+                <img
+                  src={aslReferenceSrc}
+                  alt="Guia visual del alfabeto dactilologico ASL"
+                  className="asl-reference-image"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
-// Componentes auxiliares
-function StatCard({ icon, label, value, isDarkMode }) {
+function StatusPill({ icon, label, tone = 'neutral', pulsing = false, eyebrow }) {
+  const dotClass = tone === 'positive' ? 'bg-[var(--accent-green)]' : 'bg-[var(--text-secondary)]'
+
   return (
-    <div className={`rounded-lg sm:rounded-xl border-2 p-3 sm:p-4 md:p-5 shadow-md ${isDarkMode ? 'bg-slate-700/40 border-slate-600' : 'bg-gradient-to-br from-emerald-100 to-cyan-100 border-cyan-300'}`}>
-      <div className={`flex items-center gap-2 mb-2 sm:mb-3 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
-        {icon}
-        <span className="text-xs font-semibold uppercase tracking-wide">{label}</span>
+    <div className={`status-pill ${tone === 'positive' ? 'status-pill-positive' : ''}`}>
+      <span className={`status-pill-dot ${dotClass} ${pulsing ? 'animate-pulse' : ''}`} />
+      <span className="status-pill-icon">{icon}</span>
+      <span className="flex flex-col leading-tight">
+        {eyebrow ? <span className="status-pill-eyebrow">{eyebrow}</span> : null}
+        <span>{label}</span>
+      </span>
+    </div>
+  )
+}
+
+function MetricCard({ icon, label, value, compact = false }) {
+  return (
+    <div className={`metric-card ${compact ? 'metric-card-compact' : ''}`}>
+      <div className={`flex items-center gap-2 text-[var(--text-secondary)] ${compact ? 'mb-2' : 'mb-3'}`}>
+        {icon ? <span className="text-[var(--accent-cyan)]">{icon}</span> : null}
+        <p className="mini-label">{label}</p>
       </div>
-      <p className={`text-lg sm:text-xl md:text-2xl font-bold break-words ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`}>{value}</p>
+      <p className={`${compact ? 'text-[1.05rem]' : 'text-[1.35rem]'} font-semibold leading-none text-[var(--text-primary)]`}>
+        {value}
+      </p>
+    </div>
+  )
+}
+
+function BasicStatusRow({ label, value, active, className = '' }) {
+  return (
+    <div className={`basic-status-card ${className}`}>
+      <span className="mini-label mb-2 block">{label}</span>
+      <span className={`text-base font-semibold ${active ? 'text-[var(--accent-green)]' : 'text-[var(--text-primary)]'}`}>
+        {value}
+      </span>
     </div>
   )
 }
