@@ -22,9 +22,7 @@ function PredictionPanel({
   onClose,
   appTitle,
   apiBaseUrlDraft,
-  savedApiBaseUrl,
   frameIntervalDraft,
-  savedFrameIntervalMs,
   onApiBaseUrlChange,
   onFrameIntervalChange,
   onSaveSettings,
@@ -75,7 +73,7 @@ function PredictionPanel({
         aria-modal="true"
         aria-hidden={!isOpen}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-[var(--border-subtle)] px-5 py-5 sm:px-6">
+        <div className="drawer-header">
           <div className="min-w-0">
             <p className="section-kicker">{appTitle}</p>
             <h2 className="section-title">Panel tecnico</h2>
@@ -87,12 +85,12 @@ function PredictionPanel({
           </button>
         </div>
 
-        <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">
+        <div className="drawer-body">
           <DrawerSection
             title="Backend"
             subtitle="Conexion activa y configuracion de envio"
           >
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2">
               <InfoBlock
                 icon={<Server size={16} />}
                 label="Estado"
@@ -108,12 +106,10 @@ function PredictionPanel({
                 <Zap size={16} />
                 <span>Comprobar backend</span>
               </button>
-              <InfoBlock label="URL API" value={savedApiBaseUrl} mono />
-              <InfoBlock label="Intervalo de envio" value={`${savedFrameIntervalMs} ms`} />
             </div>
 
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <label className="space-y-2">
+            <div className="drawer-form-grid">
+              <label className="drawer-field">
                 <span className="drawer-label">URL base API</span>
                 <input
                   type="text"
@@ -123,7 +119,7 @@ function PredictionPanel({
                   className="drawer-input"
                 />
               </label>
-              <label className="space-y-2">
+              <label className="drawer-field">
                 <span className="drawer-label">Intervalo de envio (ms)</span>
                 <input
                   type="number"
@@ -136,7 +132,7 @@ function PredictionPanel({
               </label>
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-3">
+            <div className="drawer-actions">
               <button
                 type="button"
                 onClick={onSaveSettings}
@@ -161,7 +157,7 @@ function PredictionPanel({
             title="Prediccion actual"
             subtitle="Resumen de la ultima respuesta del backend"
           >
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2">
               <InfoBlock label="Letra" value={displayLetter} prominent />
               <InfoBlock label="Confianza" value={confidence} />
               <InfoBlock
@@ -172,9 +168,9 @@ function PredictionPanel({
             </div>
 
             {topCandidates.length > 0 && (
-              <div className="mt-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-muted)] p-4">
+              <div className="drawer-highlight-block">
                 <p className="drawer-label">Top predicciones</p>
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-4 flex flex-wrap gap-3">
                   {topCandidates.map((candidate) => (
                     <span key={candidate.label} className="candidate-pill">
                       {candidate.label} {formatConfidence(candidate.confidence)}
@@ -189,7 +185,7 @@ function PredictionPanel({
             title="Controles rapidos"
             subtitle="Acciones directas para camara y envio"
           >
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2">
               <ControlButton
                 onClick={onStartCamera}
                 disabled={isCameraActive}
@@ -225,7 +221,7 @@ function PredictionPanel({
             title="Estadisticas"
             subtitle="Metricas reales de la sesion actual"
           >
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2">
               <InfoBlock label="Frames procesados" value={metadata?.processed_frames ?? '--'} />
               <InfoBlock label="Frames con mano" value={metadata?.hand_detected_frames ?? '--'} />
               <InfoBlock label="Solicitudes OK" value={requestStats.successCount} />
@@ -238,12 +234,12 @@ function PredictionPanel({
               title="Recomendaciones"
               subtitle="Mensajes justificados por la respuesta del backend"
             >
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {feedback.title && (
-                  <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-muted)] p-4">
+                  <div className="drawer-highlight-block">
                     <p className="text-sm font-semibold text-[var(--text-primary)]">{feedback.title}</p>
                     {feedback.message && (
-                      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+                      <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
                         {feedback.message}
                       </p>
                     )}
@@ -252,7 +248,7 @@ function PredictionPanel({
                 {feedback?.tips?.map((tip) => (
                   <div
                     key={tip}
-                    className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-muted)] px-4 py-3 text-sm text-[var(--text-primary)]"
+                    className="drawer-tip-block"
                   >
                     {tip}
                   </div>
@@ -262,7 +258,7 @@ function PredictionPanel({
           )}
 
           {error && (
-            <div className="rounded-2xl border border-rose-400/30 bg-rose-500/10 p-4 text-sm text-rose-200">
+            <div className="rounded-2xl border border-rose-400/30 bg-rose-500/10 p-5 text-sm text-rose-200">
               <div className="flex items-start gap-3">
                 <AlertCircle size={18} className="mt-0.5 shrink-0" />
                 <p className="leading-6">{error}</p>
@@ -277,8 +273,8 @@ function PredictionPanel({
 
 function DrawerSection({ title, subtitle, children }) {
   return (
-    <section className="rounded-[24px] border border-[var(--border-subtle)] bg-[var(--surface-panel)] p-5 shadow-[var(--soft-shadow)]">
-      <div className="mb-4">
+    <section className="drawer-section">
+      <div className="drawer-section-heading">
         <p className="section-title">{title}</p>
         <p className="section-copy">{subtitle}</p>
       </div>
@@ -289,8 +285,8 @@ function DrawerSection({ title, subtitle, children }) {
 
 function InfoBlock({ icon, label, value, emphasis = false, mono = false, prominent = false }) {
   return (
-    <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-muted)] p-4">
-      <div className="mb-2 flex items-center gap-2 text-[var(--text-secondary)]">
+    <div className="drawer-info-block">
+      <div className="drawer-info-label-row">
         {icon && <span>{icon}</span>}
         <p className="drawer-label">{label}</p>
       </div>
