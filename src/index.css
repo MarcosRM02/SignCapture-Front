@@ -181,6 +181,10 @@ img {
   background: color-mix(in srgb, var(--accent-green) 12%, var(--surface-muted));
 }
 
+.status-pill-negative {
+  background: color-mix(in srgb, var(--accent-danger) 12%, var(--surface-muted));
+}
+
 .status-pill-eyebrow {
   font-size: 0.68rem;
   letter-spacing: 0.12em;
@@ -193,7 +197,6 @@ img {
   width: 0.625rem;
   flex-shrink: 0;
   border-radius: 999px;
-  background: var(--accent-green);
 }
 
 .status-pill-icon {
@@ -722,9 +725,26 @@ img {
   background: rgba(148, 163, 184, 0.12);
 }
 
+@media (max-width: 1023px) {
+  html,
+  body,
+  #root {
+    height: auto;
+  }
+  body {
+    overflow: visible;
+  }
+  
+  .left-column,
+  .middle-column,
+  .right-column {
+    overflow: visible;
+  }
+}
+
 @media (max-width: 640px) {
   body {
-    overflow: auto;
+    overflow: visible;
   }
 
   .toolbar-button,
