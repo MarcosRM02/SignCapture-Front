@@ -127,8 +127,8 @@ function InferenceClient() {
   }, [confidenceValue, displayLetter, hasDetection])
 
   return (
-    <div className="app-shell h-screen overflow-hidden">
-      <div className="page-shell reference-shell mx-auto flex h-screen w-full max-w-[1540px] flex-col px-4 py-2.5 sm:px-5 sm:py-3 lg:px-6">
+    <div className="app-shell min-h-screen lg:h-screen lg:overflow-hidden">
+      <div className="page-shell reference-shell mx-auto flex min-h-screen lg:h-screen w-full flex-col px-4 py-2.5 sm:px-5 sm:py-3 lg:px-8">
         <header className="surface-panel reference-header">
           <div className="header-grid">
             <div className="flex min-w-0 items-start gap-4">
@@ -138,9 +138,6 @@ function InferenceClient() {
               <div className="min-w-0">
                 <p className="section-kicker mb-1">Reconocimiento ASL en tiempo real</p>
                 <h1 className="reference-title">SignCapture</h1>
-                <p className="reference-subtitle">
-                  Monitoriza la cámara, la predicción actual y el estado del sistema en una interfaz limpia y compacta.
-                </p>
               </div>
             </div>
 
@@ -148,7 +145,7 @@ function InferenceClient() {
               <StatusPill
                 icon={<Server size={15} />}
                 label={connectionLabel}
-                tone={backendHealthy ? 'positive' : 'neutral'}
+                tone={healthLoading ? 'neutral' : (backendHealthy ? 'positive' : 'negative')}
                 pulsing={healthLoading}
               />
               <button
@@ -398,10 +395,19 @@ function InferenceClient() {
 }
 
 function StatusPill({ icon, label, tone = 'neutral', pulsing = false, eyebrow }) {
-  const dotClass = tone === 'positive' ? 'bg-[var(--accent-green)]' : 'bg-[var(--text-secondary)]'
+  let dotClass = 'bg-[var(--text-secondary)]'
+  let pillClass = ''
+
+  if (tone === 'positive') {
+    dotClass = 'bg-[var(--accent-green)]'
+    pillClass = 'status-pill-positive'
+  } else if (tone === 'negative') {
+    dotClass = 'bg-[var(--accent-danger)]'
+    pillClass = 'status-pill-negative'
+  }
 
   return (
-    <div className={`status-pill ${tone === 'positive' ? 'status-pill-positive' : ''}`}>
+    <div className={`status-pill ${pillClass}`}>
       <span className={`status-pill-dot ${dotClass} ${pulsing ? 'animate-pulse' : ''}`} />
       <span className="status-pill-icon">{icon}</span>
       <span className="flex flex-col leading-tight">
