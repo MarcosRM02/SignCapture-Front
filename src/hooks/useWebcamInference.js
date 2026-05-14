@@ -3,6 +3,7 @@ import { appConfig, storageKeys } from "../config/appConfig";
 import {
   checkHealth as requestHealth,
   sendFrameForInference,
+  sendFeedback as apiSendFeedback,
 } from "../services/inferenceApi";
 import { usePersistentState } from "./usePersistentState";
 import { useWebcamSession } from "./useWebcamSession";
@@ -397,6 +398,23 @@ function useWebcamInference() {
     setStatusMessage("Configuracion restaurada a los valores por defecto.");
   };
 
+  const submitFeedback = async (isCorrect) => {
+    if (!activeApiBaseUrl) {
+      setError("No hay conexión con la API para enviar feedback.");
+      return false;
+    }
+    
+    try {
+      await apiSendFeedback(activeApiBaseUrl, isCorrect, appConfig.requestTimeoutMs);
+      setStatusMessage("Feedback enviado exitosamente.");
+      return true;
+    } catch (requestError) {
+      setError(buildRequestErrorMessage(requestError));
+      setStatusMessage("No se pudo enviar el feedback.");
+      return false;
+    }
+  };
+
   return {
     appTitle: appConfig.appTitle,
     apiBaseUrlDraft,
@@ -427,6 +445,7 @@ function useWebcamInference() {
     startStreaming,
     stopStreaming,
     checkHealth,
+    submitFeedback,
   };
 }
 

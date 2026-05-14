@@ -10,6 +10,8 @@ import {
   Server,
   Square,
   SunMedium,
+  ThumbsDown,
+  ThumbsUp,
   X,
   Zap,
 } from 'lucide-react'
@@ -58,7 +60,15 @@ function InferenceClient() {
     startStreaming,
     stopStreaming,
     checkHealth,
+    submitFeedback,
   } = useWebcamInference()
+
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false)
+  const handleFeedback = async (isCorrect) => {
+    setIsSubmittingFeedback(true)
+    await submitFeedback(isCorrect)
+    setTimeout(() => setIsSubmittingFeedback(false), 800) // Pequeño delay visual
+  }
 
   useEffect(() => {
     document.documentElement.dataset.theme = isDarkMode ? 'dark' : 'light'
@@ -241,6 +251,34 @@ function InferenceClient() {
                     {displayLetter}
                   </div>
                 </div>
+                
+                {hasDetection && (
+                  <div className="mt-5 border-t border-slate-200/10 pt-4">
+                    <p className="mb-3 text-center text-xs font-medium text-[var(--text-secondary)]">
+                      Valida la prediccion para mejorar el modelo:
+                    </p>
+                    <div className="flex justify-center gap-3">
+                      <button
+                        type="button"
+                        disabled={isSubmittingFeedback}
+                        onClick={() => handleFeedback(true)}
+                        className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-500/15 py-2.5 text-sm font-medium text-emerald-500 transition-colors hover:bg-emerald-500/25 disabled:opacity-50"
+                      >
+                        <ThumbsUp size={16} />
+                        Correcto
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isSubmittingFeedback}
+                        onClick={() => handleFeedback(false)}
+                        className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-rose-500/15 py-2.5 text-sm font-medium text-rose-500 transition-colors hover:bg-rose-500/25 disabled:opacity-50"
+                      >
+                        <ThumbsDown size={16} />
+                        Incorrecto
+                      </button>
+                    </div>
+                  </div>
+                )}
 
               </article>
 

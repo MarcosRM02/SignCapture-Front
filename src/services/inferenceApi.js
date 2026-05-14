@@ -1,5 +1,6 @@
 const HEALTH_ENDPOINT = '/api/v1/health'
 const INFERENCE_ENDPOINT = '/api/v1/inference/frame'
+const FEEDBACK_ENDPOINT = '/api/v1/inference/feedback'
 
 export async function checkHealth(apiBaseUrl, timeoutMs) {
   const response = await fetchWithTimeout(
@@ -38,6 +39,33 @@ export async function sendFrameForInference(
     const errorBody = await safeReadErrorBody(response)
     throw new Error(
       `Inferencia fallida con estado HTTP ${response.status}.${errorBody ? ` ${errorBody}` : ''}`,
+    )
+  }
+
+  return response.json()
+}
+
+export async function sendFeedback(
+  apiBaseUrl,
+  isCorrect,
+  timeoutMs = 5000,
+) {
+  const response = await fetchWithTimeout(
+    buildUrl(apiBaseUrl, FEEDBACK_ENDPOINT),
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ is_correct: isCorrect }),
+    },
+    timeoutMs,
+  )
+
+  if (!response.ok) {
+    const errorBody = await safeReadErrorBody(response)
+    throw new Error(
+      `Envío de feedback fallido con estado HTTP ${response.status}.${errorBody ? ` ${errorBody}` : ''}`,
     )
   }
 
