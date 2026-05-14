@@ -48,6 +48,7 @@ function InferenceClient() {
     error,
     statusMessage,
     prediction,
+    lastValidPrediction,
     feedback,
     metadata,
     lastSuccessAt,
@@ -112,7 +113,7 @@ function InferenceClient() {
   const cameraStateLabel = isCameraActive ? 'Activa' : 'Inactiva'
   const streamingStateLabel = isStreaming ? 'Activo' : 'Inactivo'
   const detectionStateLabel = hasDetection ? 'Mano detectada' : 'Sin mano'
-  const displayLetter = getDisplayLetter(prediction)
+  const displayLetter = getDisplayLetter(prediction ?? lastValidPrediction)
   const confidence = formatConfidence(prediction?.confidence)
   const confidenceValue = typeof prediction?.confidence === 'number'
     ? prediction.confidence * 100
@@ -252,10 +253,10 @@ function InferenceClient() {
                   </div>
                 </div>
                 
-                {hasDetection && (
+                {lastValidPrediction && (
                   <div className="mt-5 border-t border-slate-200/10 pt-4">
                     <p className="mb-3 text-center text-xs font-medium text-[var(--text-secondary)]">
-                      Valida la prediccion para mejorar el modelo:
+                      Valida la prediccion ({getDisplayLetter(lastValidPrediction)}) para mejorar el modelo:
                     </p>
                     <div className="flex justify-center gap-3">
                       <button

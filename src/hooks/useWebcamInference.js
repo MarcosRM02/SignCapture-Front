@@ -28,6 +28,7 @@ function useWebcamInference() {
     "Camara lista para iniciarse.",
   );
   const [prediction, setPrediction] = useState(null);
+  const [lastValidPrediction, setLastValidPrediction] = useState(null);
   const [feedback, setFeedback] = useState(null);
   const [metadata, setMetadata] = useState(null);
   const [landmarks, setLandmarks] = useState([]);
@@ -189,6 +190,7 @@ function useWebcamInference() {
 
     setIsCameraActive(false);
     setPrediction(null);
+    setLastValidPrediction(null);
     setFeedback(null);
     setMetadata(null);
     setLandmarks([]);
@@ -279,6 +281,9 @@ function useWebcamInference() {
       const durationMs = Math.round(performance.now() - startedAt);
 
       setPrediction(response.prediction ?? null);
+      if (response.prediction && response.prediction.label !== 'sin_deteccion') {
+        setLastValidPrediction(response.prediction);
+      }
       setFeedback(response.feedback ?? null);
       setMetadata(response.metadata ?? null);
       setLandmarks(response.landmarks ?? []);
@@ -432,6 +437,7 @@ function useWebcamInference() {
     error,
     statusMessage,
     prediction,
+    lastValidPrediction,
     feedback,
     metadata,
     landmarks,
